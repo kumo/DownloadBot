@@ -56,100 +56,72 @@ def errors_command(update, context):
     update.message.reply_text(text)
 
 
-def download_media(link):
+def download_media(link, folder_name):
 
-    result = subprocess.run(
-        [YOU_GET_APP, "-i", link], capture_output=True, text=True, check=True
+    # Use you_get to download the file to the specified folder
+    # if it fails it will return an error (check=True)
+    # which we pass to the calling function
+    subprocess.run(
+        [YOU_GET_APP, "--output-dir={}".format(folder_name), link], check=True
     )
 
-    # print("stdout:", result.stdout)
-    # print("stderr:", result.stderr)
-
-    if "mp4" in result.stdout:
-        # print("Contains a video")
-
-        timestr = time.strftime("%Y%m%d-%H%M%S")
-        # print(timestr)
-
-        result = subprocess.run(
-            # ["/usr/local/bin/you-get", "--output-filename=testing", link], capture_output=True, text=True, check=True
-            [YOU_GET_APP, "--output-dir={}".format(timestr), link], capture_output=True, text=True, check=True
-        )
-
-        # print("Downloaded video")
-
-        return timestr
-
-        # update.send_document(chat_id=update.message.chat_id, document=open('test.mp4', 'rb'))
-        # update.message.reply_document(document=open('testing.mp4', 'rb'))
-        # document='test.mp4')
-        # bot.send_document(chat_id=chat_id, document=open('test.mp4', 'rb')) 
 
 def log_error(message):
     with open(LOG_FILE, "a") as myfile:
         myfile.write(message)
+        myfile.write("\n")
+        
+    logger.warning(message)
 
 
 def parse_message(update, context):
-    folder = ""
-    link = ""
-   
-    #if "twitter" in update.message.text:
-    #    link = update.message.text
 
-    #if "tiktok" in update.message.text:
-    #    link = update.message.text
+    download_link = update.message.text
+    folder_name = time.strftime("%Y%m%d-%H%M%S")
 
-    #if link == "":
-    #    print("Couldn't find anything to download.")
-    #    return
-
-    update.message.reply_text("Trying to download media.")
-
+    bot_message = update.message.reply_text("Downloading media...")
+        
     try:
-        folder = download_media(update.message.text)
-    
-        update.message.reply_text("Media downloaded.")
-    except Exception as e:
-        # print(e)
-        logger.warning("Couldn't download link: {}".format(update.message.text))
-        update.message.reply_text("Couldn't download the link, but it has been logged")
+        # Try to download the media. If there is a problem,
+        # an exception is raised.
+        download_media(download_link, folder_name)
 
-        log_error("Error: {}\n".format(update.message.text))
-
-        return
-
-    # print("Should send contains of folder {}".format(folder))
-
-    files = [f for f in listdir(folder) if isfile(join(folder, f))]
-    # print(files)
-    # print("There are {} files".format(len(files)))
-    update.message.reply_text("There are {} file(s).".format(len(files)))
-
-    filename = join(folder, files[0])
-
-    try:
-        update.message.reply_text("Trying to send file.")
-        update.message.reply_document(document=open(filename, 'rb'), timeout=20)
-        update.message.reply_text("Here is your file!")
+        bot_message.edit_text("Media downloaded.")
     except Exception as e:
         print(e)
-        logger.warning("Couldn't send file: {}".format(filename))
-        update.message.reply_text("Couldn't send the file, trying again.")
+        bot_message.edit_text("Couldn't download the media, but I have taken note.")
+        log_error("Couldn't download link: {}".format(download_link))
 
-        try:
-            update.message.reply_document(document=open(filename, 'rb'), timeout=240)
-            update.message.reply_text("Here is your file!")
+        # We can't do anything else, so let's leave the function
+        return
 
-        except Exception as e:
-            logger.warning("Couldn't send file (again): {}".format(filename))
-            update.message.reply_text("Couldn't send it. Logged and giving up.")
-            log_error("Couldn't send file (again): {}".format(filename))
+    # Inform the user that we are sending something
+    bot_message = update.message.reply_text("Sending media...")
 
-            return
-        
-        logger.warning("Managed to send file second time: {}".format(filename))
-        log_error("Warning: took 2 times to send file: {}".format(filename))
+    try:
+        # Try to send the media. If there is a problem,
+        # an exception is raised.
+        send_media(folder_name, update.message)
+
+        bot_message.edit_text("Media sent.")
+    except Exception as e:
+        print(e)
+        bot_message.edit_text("Couldn't send the media, but I have taken note.")
+
+        log_error("Couldn't send media in {} for {}".format(folder_name, download_link))
+
+
+def send_media(folder_name, message):
+    files = [f for f in listdir(folder_name) if isfile(join(folder_name, f))]
+
+    # Ensure that there are files
+    assert(len(files) > 0)
+
+    for file in files:
+        filename = join(folder_name, file)
+        message.reply_document(document=open(filename, 'rb'), timeout=TIMEOUT)
+
+
 
 def main():
     # Start the bot
