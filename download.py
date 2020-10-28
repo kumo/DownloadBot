@@ -28,9 +28,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 LOG_FILE="log.txt"
-YOU_GET_APP="/usr/local/bin/you-get"
+# YOU_GET_APP="/usr/local/bin/you-get" # RaspberryPi
+YOU_GET_APP="/usr/local/bin/you-get" # MacBook
 TIMEOUT=360 # How much time do we want to wait (in seconds) before giving up?
-BOT_TOKEN="***REMOVED***"
+# BOT_TOKEN="***REMOVED***" # ***REMOVED***
+BOT_TOKEN="***REMOVED***" # ***REMOVED***
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
@@ -79,7 +81,11 @@ def log_error(message):
 # This function tries to download the media from the link,
 # and then send it back to the user, keeping them informed
 def parse_message(update, context):
-  	# Use the text from the message as the download link
+    if update.message.text == "Thanks!" or update.message.text == "Thanks" or update.message.text == "thanks":
+        update.message.reply_text("You are welcome!")
+        return
+
+    # Use the text from the message as the download link
     download_link = update.message.text
     
     # We want to save the media to a specific folder:
@@ -128,11 +134,15 @@ def parse_message(update, context):
         bot_message.edit_text("Couldn't send the media, but I have taken note.")
         # Log the problem
         log_error("Couldn't send media in {} for {}".format(folder_name, download_link))
+        
+        # We can't do anything else, so let's leave the function
+        return
 
+    remove_media(folder_name)
 
 # This function sends the media in the specified folder as a reply
 def send_media(folder_name, message):
-  	# Collect all the files in the folder and skip the folders
+    # Collect all the files in the folder and skip the folders
     files = [f for f in listdir(folder_name) if isfile(join(folder_name, f))]
 
     # Ensure that there are files. This should raise an exception otherwise.
@@ -145,6 +155,16 @@ def send_media(folder_name, message):
         # otherwise it might fail after trying for 20 seconds
         message.reply_document(document=open(filename, 'rb'), timeout=TIMEOUT)
 
+
+
+import shutil
+
+# This function removes the media that is in the specified folder
+def remove_media(folder_name):
+    try:
+        shutil.rmtree(folder_name)
+    except OSError as e:
+        print("Error: %s - %s." % (e.filename, e.strerror))
 
 def main():
     # Start the bot
