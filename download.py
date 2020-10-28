@@ -1,39 +1,36 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This program is dedicated to the public domain under the CC0 license.
 
 """
-Simple Bot to reply to Telegram messages.
-
-First, a few handler functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-
-Usage:
-Basic Echobot example, repeats messages.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
+Simple Bot to download (Twitter) videos and send them back.
 """
-
-import logging
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ChatAction
 
+# We need to be able to call an external app
 import subprocess
 import sys
 
+# We need to be able to get today's date and current time
 import time
 
+# We need to be able to create folders and list contents of folders
 from os import listdir
 from os.path import isfile, join
-# # Enable logging
+
+import logging
+
+# Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
 
 logger = logging.getLogger(__name__)
 
+LOG_FILE="log.txt"
+YOU_GET_APP="/usr/local/bin/you-get"
+TIMEOUT=360
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
@@ -49,17 +46,20 @@ def help_command(update, context):
 
 def errors_command(update, context):
     """List all the download errors when the command /errors is issued."""
-    
-    with open("log.txt", "r") as myfile:
+   
+    # Open the log file in read mode 
+    with open(LOG_FILE, "r") as myfile:
+        # Get the text from the file
         text = myfile.read()
 
+    # Send the contents of the file to the chat
     update.message.reply_text(text)
 
 
 def download_media(link):
 
     result = subprocess.run(
-        ["/usr/local/bin/you-get", "-i", link], capture_output=True, text=True, check=True
+        [YOU_GET_APP, "-i", link], capture_output=True, text=True, check=True
     )
 
     # print("stdout:", result.stdout)
@@ -73,7 +73,7 @@ def download_media(link):
 
         result = subprocess.run(
             # ["/usr/local/bin/you-get", "--output-filename=testing", link], capture_output=True, text=True, check=True
-            ["/usr/local/bin/you-get", "--output-dir={}".format(timestr), link], capture_output=True, text=True, check=True
+            [YOU_GET_APP, "--output-dir={}".format(timestr), link], capture_output=True, text=True, check=True
         )
 
         # print("Downloaded video")
@@ -86,24 +86,23 @@ def download_media(link):
         # bot.send_document(chat_id=chat_id, document=open('test.mp4', 'rb')) 
 
 def log_error(message):
-    with open("log.txt", "a") as myfile:
+    with open(LOG_FILE, "a") as myfile:
         myfile.write(message)
 
 
-def parse(update, context):
-    """Echo the user message."""
+def parse_message(update, context):
     folder = ""
     link = ""
    
-    if "twitter" in update.message.text:
-        link = update.message.text
+    #if "twitter" in update.message.text:
+    #    link = update.message.text
 
-    if "tiktok" in update.message.text:
-        link = update.message.text
+    #if "tiktok" in update.message.text:
+    #    link = update.message.text
 
-    if link == "":
-        print("Couldn't find anything to download.")
-        return
+    #if link == "":
+    #    print("Couldn't find anything to download.")
+    #    return
 
     update.message.reply_text("Trying to download media.")
 
@@ -119,7 +118,6 @@ def parse(update, context):
         log_error("Error: {}\n".format(update.message.text))
 
         return
-
 
     # print("Should send contains of folder {}".format(folder))
 
@@ -154,29 +152,25 @@ def parse(update, context):
         log_error("Warning: took 2 times to send file: {}".format(filename))
 
 def main():
-    """Start the bot."""
-    # Create the Updater and pass it your bot's token.
-    # Make sure to set use_context=True to use the new context based callbacks
-    # Post version 12 this will no longer be necessary
+    # Start the bot
     updater = Updater("***REMOVED***", use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # on different commands - answer in Telegram
+    # Add handlers for different commands (for example /start)
+    # the string is the command (without "/") and after there is the function.
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("errors", errors_command))
     dp.add_handler(CommandHandler("help", help_command))
 
-    # on noncommand i.e message - parse the message on Telegram
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, parse))
+    # Add a handler for a normal message (in this case, parse_message)
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, parse_message))
 
     # Start the Bot
     updater.start_polling()
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
+    # Run the bot until you press Ctrl-C.
     updater.idle()
 
 
