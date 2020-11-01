@@ -28,11 +28,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 LOG_FILE="log.txt"
-# YOU_GET_APP="/usr/local/bin/you-get" # RaspberryPi
-YOU_GET_APP="/usr/local/bin/you-get" # MacBook
-TIMEOUT=360 # How much time do we want to wait (in seconds) before giving up?
-# BOT_TOKEN="***REMOVED***" # ***REMOVED***
+YOU_GET_APP="/home/pi/.local/bin/you-get" # RaspberryPi
+# YOU_GET_APP="/usr/local/bin/you-get" # MacBook
+TIMEOUT=1000 # How much time do we want to wait (in seconds) before giving up?
 BOT_TOKEN="***REMOVED***" # ***REMOVED***
+# BOT_TOKEN="***REMOVED***" # ***REMOVED***
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
