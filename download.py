@@ -28,6 +28,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Use dotenv for bot token and you-get path
+import os
 from os.path import join, dirname
 from dotenv import load_dotenv
 
