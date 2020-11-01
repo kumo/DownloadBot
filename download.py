@@ -27,12 +27,22 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# Use dotenv for bot token and you-get path
+from os.path import join, dirname
+from dotenv import load_dotenv
+
+# Create .env file path.
+dotenv_path = join(dirname(__file__), '.env')
+
+# Load file from the path.
+load_dotenv(dotenv_path)
+
+# Get variables from the environment
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+YOU_GET_APP = os.getenv('YOU_GET_APP')
+
 LOG_FILE="log.txt"
-YOU_GET_APP="/home/pi/.local/bin/you-get" # RaspberryPi
-# YOU_GET_APP="/usr/local/bin/you-get" # MacBook
 TIMEOUT=1000 # How much time do we want to wait (in seconds) before giving up?
-BOT_TOKEN="***REMOVED***" # ***REMOVED***
-# BOT_TOKEN="***REMOVED***" # ***REMOVED***
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
