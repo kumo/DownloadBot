@@ -65,8 +65,11 @@ def errors_command(update, context):
         # Get the text from the file
         text = myfile.read()
 
-    # Send the contents of the file to the chat
-    update.message.reply_text(text)
+    if text != "":
+        # Send the contents of the file to the chat
+        update.message.reply_text(text)
+    else:
+        update.message.reply_text("There are no errors.")
 
 
 # Download the media to the specified folder
